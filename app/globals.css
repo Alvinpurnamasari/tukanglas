@@ -22,3 +22,9 @@ textarea,
 select {
   font: inherit;
 }
+
+@media (max-width: 1023px) {
+  body {
+    padding-bottom: 68px;
+  }
+}

@@ -79,7 +79,7 @@ export default function EstimateForm() {
                     <div className="mt-8 space-y-5">
                         <CheckCircle2 className="mt-1 shrink-0text-[#ff671d]" size={24}/>
                         <div>
-                            <h3 className="font-bold text-white">Knsultasi lebih mudah</h3>
+                            <h3 className="font-bold text-white">Kosultasi lebih mudah</h3>
                             <p className="mt-1 text-gray-400">
                                 Sampaikan jenis pekerjaaan dan perkiraan ukuran
                             </p>
