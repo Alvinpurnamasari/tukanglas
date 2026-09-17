@@ -66,7 +66,7 @@ export default function EstimateForm() {
             <div className="mx-auto grid max-w-[1560px] items-center gap-12 px-5 lg:grid-cols-[0.8fr_1.2fr] lg:px-10">
                 {/* Informasi*/}
                 <div>
-                    <span className="inline-flex rounded-full border border-[#ff671d]/40 bg-[#ff671d]/10 px-5 py-2 font-bold text-[#ff7a35">
+                    <span className="inline-flex rounded-full border border-[#ff671d]/40 bg-[#ff671d]/10 px-5 py-2 font-bold text-[#ff7a35]">
                         Estimasi Pengerjaan 
                     </span>
                     <h2 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">

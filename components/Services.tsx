@@ -1,146 +1,129 @@
 import {
-    Anvil,
-    ArrowRight,
-    Building2,
-    Construction,
-    DoorOpen,
-    Fence,
-    Grid2x2,
-    Hammer,
-    House,
-    Layers3,
-    PackageOpen,
-    Settings,
-    Wrench,
-} from "lucide-react"
+  Anvil,
+  ArrowRight,
+  Building2,
+  Construction,
+  DoorOpen,
+  Fence,
+  Grid2X2,
+  Hammer,
+  House,
+  Layers3,
+  PackageOpen,
+  Settings,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
+import { createClient } from "@/utils/supabase/server";
 
-const services =[
-    {
-        title: "Jasa Las Panggilan",
-        description: " Melayani perbaikan las langsung dilokasi pelanggan.",
-        icon: Wrench,
-    },
-    {
-        title: "Pembuatan Kanopi",
-        description: "Membuat kanopi rumah, carport, toko, dan bangunan dengan desain custum.",
-        icon: House,
-    },
-    {
-        title: "Pagar Besi",
-        description: "Pembuatan pagar minimalis, klasik, sliding, dan pagar sesuai permintaan.",
-        icon: Fence,
-    },
-    {
-        title: "Teralis Jendela",
-        description: "Teralis keamanan untuk jendela dan pintu dengan desain kuat dan menarik.",
-        icon: Grid2x2,
-    },
-    {
-        title: "Railing Tangga Balkon",
-        description: "Pembuatan railing besi atau stainless yang aman, kokoh, dan rapi.",
-        icon: Layers3,
-    },
-    {
-        title: "Tangga Besi",
-        description: "Pembuatan tangga besi lurus, tangga putar, dan tangga custom.",
-        icon: Construction,
-    },
-    {
-        title: "Pintu dan Gerbang Besi",
-        description: "Pembuatan pintu rumah, gudang, bangunan, dan konstruksi baja lainnya.",
-        icon: DoorOpen,
-    },
-    {
-        title: "Konstruksi Baja",
-        description: "Pengerjaan rangka atap, gudang, bangunana, dan konstruksi baja lainnya.",
-        icon: Building2,
-    },
-    {
-        title: "Furniture Besi Custom",
-        description: "Pembuatan meja, kursi, rak toko, rak rumah, dan furniture berbahan besi.",
-        icon: PackageOpen,
-    },
-    {
-        title: "Las Stainless",
-        description: "Pengerjaan railing, pagar, furniture, dan kebutuhan berbahan stainless.",
-        icon: Anvil,
-    },
-    {
-        title: "Servis dan Perbaikan Las",
-        description: "Menerima desain dan kebutuhan pekerjaan las sesuai permintaan pelanggan.",
-        icon: Settings,
-    },
-    {
-        title: "Pekerjaan Las Custom",
-        description: "Menerima desain dan kebutuhan pekerjaan las sesuai  permintaan pelanggan.",
-        icon: Hammer,
-    },
-];
+type Service = {
+  id: number;
+  title: string;
+  description: string;
+  icon: string;
+  sort_order: number;
+};
+
+const iconMap: Record<string, LucideIcon> = {
+  Wrench,
+  House,
+  Fence,
+  Grid2X2,
+  Layers3,
+  Construction,
+  DoorOpen,
+  Building2,
+  PackageOpen,
+  Anvil,
+  Settings,
+  Hammer,
+};
 
 function createWhatsAppUrl(service: string) {
-    const message = `Halo admin TukangLas.org, saya ingin konsultasi mengenai layanan ${service}.`;
+  const message = `Halo TukangLas.org, saya ingin konsultasi mengenai layanan ${service}.`;
 
-    return `https://wa.me/6282227427004?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/6282227427004?text=${encodeURIComponent(message)}`;
 }
-export default function Services() {
-    return (
-        <section id="layanan" className="bg-[#f4f6f8] py-20 lg:py-28">
-            <div className="mx-auto max-w-[1560px] px-5 lg:px-10">
-                <div className="mx-auto mb-14 max-w-3xl text-center">
-                    <span className="inline-flex rounded-full bg-[#ff671d]/10 px-5 py-2 font-bold text-[#ff671d]">
-                        Layanan Kami
-                    </span>
 
-                    <h2 className="mt-5 text-4xl font-extrabold tracking-tight text-[#0d1728] sm:text-5xl">
-                        Layanan Tukang Las Kami
-                    </h2>
+export default async function Services() {
+  const supabase = await createClient();
 
-                    <p className="mt-5 text-lg leading-8 text-gray-600">
-                        Kami melayani pembuatan baru maupun perbaikan berbagai kebutuhan
-                        berbahan besi, baja, dan stainless.
-                    </p>
-                </div>
-            
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {services.map((service, index) => {
-            const Icon = service.icon;
+  const { data, error } = await supabase
+    .from("services")
+    .select("id, title, description, icon, sort_order")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
 
-            return (
-              <article
-                key={service.title}
-                className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-2 hover:border-[#ff671d]/40 hover:shadow-xl"
-              >
-                <span className="absolute right-6 top-5 text-5xl font-black text-gray-100 transition group-hover:text-[#ff671d]/10">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
+  const services: Service[] = data ?? [];
 
-                <div className="relative">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ff671d] text-white shadow-lg shadow-orange-200 transition duration-300 group-hover:rotate-3 group-hover:scale-110">
-                    <Icon size={28} />
-                  </div>
+  return (
+    <section id="layanan" className="bg-[#f4f6f8] py-20 lg:py-28">
+      <div className="mx-auto max-w-[1560px] px-5 lg:px-10">
+        <div className="mx-auto mb-14 max-w-3xl text-center">
+          <span className="inline-flex rounded-full bg-[#ff671d]/10 px-5 py-2 font-bold text-[#ff671d]">
+            Layanan Kami
+          </span>
 
-                  <h3 className="mt-6 text-2xl font-extrabold text-[#0d1728]">
-                    {service.title}
-                  </h3>
+          <h2 className="mt-5 text-4xl font-extrabold tracking-tight text-[#0d1728] sm:text-5xl">
+            Layanan Tukang Las Kami
+          </h2>
 
-                  <p className="mt-3 min-h-[56px] leading-7 text-gray-600">
-                    {service.description}
-                  </p>
-
-                  <a
-                    href={createWhatsAppUrl(service.title)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-6 inline-flex items-center gap-2 font-bold text-[#ff671d] transition hover:gap-3"
-                  >
-                    Tanya Layanan
-                    <ArrowRight size={19} />
-                  </a>
-                </div>
-              </article>
-            );
-          })}
+          <p className="mt-5 text-lg leading-8 text-gray-600">
+            Kami melayani pembuatan baru maupun perbaikan berbagai kebutuhan
+            berbahan besi, baja, dan stainless.
+          </p>
         </div>
+
+        {error ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center font-semibold text-red-600">
+            Layanan belum dapat dimuat.
+          </div>
+        ) : services.length === 0 ? (
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500">
+            Belum ada layanan yang tersedia.
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {services.map((service, index) => {
+              const Icon = iconMap[service.icon] ?? Wrench;
+
+              return (
+                <article
+                  key={service.id}
+                  className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-2 hover:border-[#ff671d]/40 hover:shadow-xl"
+                >
+                  <span className="absolute right-6 top-5 text-5xl font-black text-gray-100 transition group-hover:text-[#ff671d]/10">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+
+                  <div className="relative">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ff671d] text-white shadow-lg shadow-orange-200 transition duration-300 group-hover:rotate-3 group-hover:scale-110">
+                      <Icon size={28} />
+                    </div>
+
+                    <h3 className="mt-6 text-2xl font-extrabold text-[#0d1728]">
+                      {service.title}
+                    </h3>
+
+                    <p className="mt-3 min-h-[56px] leading-7 text-gray-600">
+                      {service.description}
+                    </p>
+
+                    <a
+                      href={createWhatsAppUrl(service.title)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-6 inline-flex items-center gap-2 font-bold text-[#ff671d] transition hover:gap-3"
+                    >
+                      Tanya Layanan
+                      <ArrowRight size={19} />
+                    </a>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
