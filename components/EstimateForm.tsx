@@ -1,197 +1,392 @@
 "use client";
 
-import { FormEvent, useState } from "react";
 import {
-  Calculator,
   CheckCircle2,
+  LoaderCircle,
   MapPin,
   MessageCircle,
   Phone,
 } from "lucide-react";
 
-const serviceOptions = [
-    "Jasa Las Panggilan",
-    "Pembuatan Kanopi",
-    "Pagar Besi",
-    "Teralis Jendela",
-    "Railing Tangga dan Balkon",
-    "Tangga Besi",
-    "Pintu dan Gerbang Besi",
-    "Konstruksi Baja",
-    "Furniture Besi custom",
-    "Las Stainless",
-    "Servis dan Perbaiakan",
-    "Pekerjaan Las Lainnya",
-];
+import {
+  FormEvent,
+  useEffect,
+  useState,
+} from "react";
+
+import { createClient } from "@/utils/supabase/client";
+
+type Service = {
+  id: number;
+  title: string;
+};
+
+type RequestForm = {
+  name: string;
+  whatsapp: string;
+  service: string;
+  estimatedSize: string;
+  location: string;
+  notes: string;
+};
+
+const initialForm: RequestForm = {
+  name: "",
+  whatsapp: "",
+  service: "",
+  estimatedSize: "",
+  location: "",
+  notes: "",
+};
 
 export default function EstimateForm() {
-    const [error, setError] = useState("");
+  const supabase = createClient();
 
-    function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
+  const [services, setServices] = useState<Service[]>([]);
+  const [form, setForm] = useState<RequestForm>(initialForm);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-        const form = event.currentTarget;
-        const formData = new FormData(form);
+  useEffect(() => {
+    async function loadServices() {
+      const { data } = await supabase
+        .from("services")
+        .select("id, title")
+        .eq("is_active", true)
+        .order("sort_order", {
+          ascending: true,
+        });
 
-        const name = String(formData.get("name") || "").trim();
-        const phone = String(formData.get("phone") || "").trim();
-        const service = String(formData.get("service") || "").trim();
-        const size = String(formData.get("size") || "").trim();
-        const location = String(formData.get("location") || "").trim();
-        const notes = String(formData.get("notes") || "").trim();
-
-        if (!name || !phone || !service || !location) {
-            setError(
-                "Nama, nomor whatsApp, jenis layanan, dan lokasi wajib diisi."
-            );
-            return;
-        }
-
-        setError("");
-
-        const message = `Halo TukangLas saya ingin meminta estimasi harga.
-        Nama: ${name}
-        Nomor WhatsApp: ${phone}
-        Jenis layanan: ${service}
-        Perkiraan ukuran: ${size || "-"}
-        Lokasi: ${location}
-        Catatan: ${notes || "-"}`;
-
-        const whatsappUrl = `https://wa.me/6282227427004?text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, "_blank");
+      setServices(data ?? []);
     }
 
-    return (
-        <section className="bg-[#0d1728] py-20 lg:py-28">
-            <div className="mx-auto grid max-w-[1560px] items-center gap-12 px-5 lg:grid-cols-[0.8fr_1.2fr] lg:px-10">
-                {/* Informasi*/}
-                <div>
-                    <span className="inline-flex rounded-full border border-[#ff671d]/40 bg-[#ff671d]/10 px-5 py-2 font-bold text-[#ff7a35]">
-                        Estimasi Pengerjaan 
-                    </span>
-                    <h2 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
-                        Minta Estimasi Harga Jasa Las
-                    </h2>
-                    <p className="mt-6 text-lg leading-8 text-gray-300">
-                        Isi informasi kebutuhan anda. Setelah  formulir dikirim, WhatsApp akan terbuka dengan pesan yang sudah tersusun otomatis.
-                    </p>
+    loadServices();
+  }, []);
 
-                    <div className="mt-8 space-y-5">
-                        <CheckCircle2 className="mt-1 shrink-0text-[#ff671d]" size={24}/>
-                        <div>
-                            <h3 className="font-bold text-white">Kosultasi lebih mudah</h3>
-                            <p className="mt-1 text-gray-400">
-                                Sampaikan jenis pekerjaaan dan perkiraan ukuran
-                            </p>
-                        </div>
-                    </div>
+  function updateForm(
+    field: keyof RequestForm,
+    value: string,
+  ) {
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
 
-                    <div className="flex items-start gap-4">
-                        <MapPin className="mt-1 shrink-0 text-[#ff671d]" size={24}/>
-                        <div>
-                            <h3 className="font-bold text-white">Cantumkan lokasi</h3>
-                            <p className="mt-1 text-gray-400">
-                                Lokasi diperlukan untuk memastikan jangkauan layanan.
-                            </p>
-                        </div>
-                    </div>
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
 
-                    <div className="flex items-start gap-4">
-                        <Phone className="mt-1 shrink-0 text-[#ff671d]" size={24}/>
-                        <div>
-                            <h3 className="font-bold text-white">
-                                WhatsApp 0822-2742-7004
-                            </h3>
-                            <p className="mt-1 text-gray-400">
-                                Admin akan menanggapi permintaan konsultasi anda.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            
+    setMessage("");
+    setErrorMessage("");
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="rounded-3xl bg-white p-6 shadow-2xl sm:p-8 lg:p-10">
-                    <div className="mb-7 flex items-center gap-4">
-                        <span className="flex h-14 w-14 items-center justify-centerrounded-2xlbg-[#ff671d] text-white">
-                            <Calculator size={29}/>
-                        </span>
-                        <div>
-                            <h3 className="text-2xl font-extrabold text-[#0d1728]">
-                                Form Permintaan Estimasi
-                            </h3>
-                            <p className="mt-1 text-gray-600">
-                                Lengkapi informasi di bawah ini.
-                            </p>
-                        </div>
-                    </div>
+    if (
+      !form.name.trim() ||
+      !form.whatsapp.trim() ||
+      !form.service ||
+      !form.location.trim()
+    ) {
+      setErrorMessage(
+        "Nama, nomor WhatsApp, jenis layanan, dan lokasi wajib diisi.",
+      );
+      return;
+    }
 
-                    <div className="grid gap-5 sm:grid-cols-2">
-                        <label className="block">
-                            <span className="mb-2 block font-bold text-[#0d1728]">
-                                Nama <span className="text-red-500">*</span>
-                            </span>
-                            <input type="text" name="name"placeholder="Masukkan nama" className="w-full rounded-xl border border-gray-300 px-4 py-3.5 outline-none transition focus:border-[#ff671d] focus:ring-4 focus:ring-[#ff671d]/10"/>
-                        </label>
-                        
-                        <label className="block">
-                            <span className="mb-2 block font-bold text-[#0d1718]">
-                                Nomor WhatsApp <span className="text-red-500">*</span>
-                            </span>
-                            <input type="tel" name="phone" placeholder="contoh:081234567890" className="w-full rounded-xl border border-gray-300 px-4 py-3.5 outline-none transition focus:border-[#ff671d] focus:ring-4 focus:ring-[#ff671d]/10"/>
-                        </label>
+    const cleanedWhatsapp = form.whatsapp.replace(/\D/g, "");
 
-                        <label className="block">
-                            <span className="mb-2 block font-bold text-[#0d1728]">
-                                Jenis Layanan <span className="text-red-500">*</span>
-                            </span>
-                            <select name="service" defaultValue="" className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3.5 outline-none transition focus:border-[#ff671d] focus:ring-4 focus:ring-[#ff671d]/10">
-                                <option value="" disabled>
-                                Pilih layanan
-                                </option>
+    if (cleanedWhatsapp.length < 10) {
+      setErrorMessage("Nomor WhatsApp belum valid.");
+      return;
+    }
 
-                                {serviceOptions.map((service) => (
-                                <option key={service} value={service}>
-                                    {service}
-                                </option>
-                                ))}
-                            </select>
-                        </label>
+    setLoading(true);
 
-                        <label className="block">
-                            <span className="mb-2 block font-bold text-[#0d1728]">
-                                Perkiraan Ukuran
-                            </span>
-                            <input type="text" name="size" placeholder="Contoh: 3 × 5 meter" className="w-full rounded-xl border border-gray-300 px-4 py-3.5 outline-none transition focus:border-[#ff671d] focus:ring-4 focus:ring-[#ff671d]/10"/>
-                        </label>
+    /*
+     * Membuka tab kosong ketika tombol diklik agar browser
+     * tidak memblokir WhatsApp setelah proses penyimpanan.
+     */
+    const whatsappWindow = window.open("", "_blank");
 
-                        <label className="block sm:col-span-2">
-                            <span className="mb-2 block font-bold text-[#0d1728]">
-                                Lokasi Pengerjaan <span className="text-red-500">*</span>
-                            </span>
-                            <input type="text" name="location" placeholder="Memasukkan kecamatan, kota, atau alamat" className="w-full rounded-xl border border-gray-300 px-4 py-3.5 outline-none transition focus:border-[#ff671d] focus:ring-4 focus:ring-[#ff671d]/10"/>
-                        </label>
+    const { error } = await supabase
+      .from("requests")
+      .insert({
+        name: form.name.trim(),
+        whatsapp: cleanedWhatsapp,
+        service: form.service,
+        estimated_size:
+          form.estimatedSize.trim() || null,
+        location: form.location.trim(),
+        notes: form.notes.trim() || null,
+      });
 
-                        <label className="block sm:col-span-2">
-                            <span className="mb-2 block font-bold text-[#0d1728]">
-                                Catatan Kebutuhan
-                            </span>
-                            <textarea name="notes"rows={4} placeholder="Jelaskan kebutuhan, desain, bahan, atau kondisi yang ingin diperbaiki" className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3.5 outline-none transition focus:border-[#ff671d] focus:ring-4 focus:ring-[#ff671d]/10" />
-                        </label>
-                    </div>
+    if (error) {
+      whatsappWindow?.close();
+      setErrorMessage(
+        `Permintaan gagal dikirim: ${error.message}`,
+      );
+      setLoading(false);
+      return;
+    }
 
-                    {error && (
-                        <p className="mt-5 rounded-xl bg-red-50 px-4 py-3 font-semibold text-red-600">
-                            {error}
-                        </p>
-                    )}
+    const whatsappMessage = [
+      "Halo TukangLas.org, saya ingin meminta estimasi pekerjaan.",
+      "",
+      `Nama: ${form.name.trim()}`,
+      `Nomor WhatsApp: ${form.whatsapp.trim()}`,
+      `Jenis layanan: ${form.service}`,
+      `Perkiraan ukuran: ${
+        form.estimatedSize.trim() || "-"
+      }`,
+      `Lokasi: ${form.location.trim()}`,
+      `Catatan: ${form.notes.trim() || "-"}`,
+    ].join("\n");
 
-                    <button type="submit" className="mt-6 flex w-full items-center justify-center gap-3 rounded-xl bg-[#25d366] px-6 py-4 text-lg font-bold text-white transition duration-300 hover:-translate-y-1 hover:bg-[#1fbd59]">
-                        <MessageCircle size={24}/> KIrim Permintaan Via WhatsApp
-                    </button>
-                </form>
-            </div>
-        </section>
-    
+    const whatsappUrl =
+      "https://wa.me/6282227427004?text=" +
+      encodeURIComponent(whatsappMessage);
+
+    if (whatsappWindow) {
+      whatsappWindow.location.href = whatsappUrl;
+    } else {
+      window.location.href = whatsappUrl;
+    }
+
+    setMessage(
+      "Permintaan berhasil disimpan. WhatsApp sedang dibuka.",
     );
+
+    setForm(initialForm);
+    setLoading(false);
+  }
+
+  return (
+    <section className="bg-[#0d1728] py-20 lg:py-28">
+      <div className="mx-auto grid max-w-[1810px] overflow-hidden px-5 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
+        {/* Informasi */}
+        <div className="rounded-t-[32px] bg-[#0d1728] px-1 py-10 text-white lg:rounded-l-[32px] lg:rounded-tr-none lg:px-0 lg:py-16 lg:pr-14">
+          <span className="inline-flex rounded-full border border-[#ff671d]/50 bg-[#ff671d]/10 px-5 py-2 font-bold text-[#ff7a35]">
+            Estimasi Pengerjaan
+          </span>
+
+          <h2 className="mt-8 text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
+            Minta Estimasi Harga Jasa Las
+          </h2>
+
+          <p className="mt-7 text-lg leading-8 text-gray-300">
+            Isi informasi kebutuhan Anda. Setelah formulir dikirim,
+            WhatsApp akan terbuka dengan pesan yang sudah tersusun
+            otomatis.
+          </p>
+
+          <div className="mt-10 space-y-6">
+            <div className="flex gap-4">
+              <CheckCircle2
+                className="mt-1 shrink-0 text-[#ff671d]"
+                size={25}
+              />
+
+              <div>
+                <h3 className="font-bold">
+                  Konsultasi lebih mudah
+                </h3>
+
+                <p className="mt-1 text-gray-400">
+                  Sampaikan jenis pekerjaan dan perkiraan ukuran.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <MapPin
+                className="mt-1 shrink-0 text-[#ff671d]"
+                size={25}
+              />
+
+              <div>
+                <h3 className="font-bold">Cantumkan lokasi</h3>
+
+                <p className="mt-1 text-gray-400">
+                  Lokasi diperlukan untuk memastikan jangkauan
+                  layanan.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Phone
+                className="mt-1 shrink-0 text-[#ff671d]"
+                size={25}
+              />
+
+              <div>
+                <h3 className="font-bold">
+                  WhatsApp 0822-2742-7004
+                </h3>
+
+                <p className="mt-1 text-gray-400">
+                  Admin akan menanggapi permintaan konsultasi Anda.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-b-[32px] bg-white p-6 sm:p-8 lg:rounded-r-[32px] lg:rounded-bl-none lg:p-12"
+        >
+          <h3 className="text-3xl font-extrabold text-[#0d1728]">
+            Form Permintaan Estimasi
+          </h3>
+
+          <p className="mt-2 text-gray-600">
+            Lengkapi informasi di bawah ini.
+          </p>
+
+          <div className="mt-8 grid gap-6 sm:grid-cols-2">
+            <label className="space-y-2 font-bold text-[#0d1728]">
+              <span>
+                Nama <span className="text-red-500">*</span>
+              </span>
+
+              <input
+                type="text"
+                value={form.name}
+                onChange={(event) =>
+                  updateForm("name", event.target.value)
+                }
+                placeholder="Masukkan nama"
+                className="w-full rounded-xl border border-gray-300 px-4 py-4 font-normal outline-none focus:border-[#ff671d]"
+              />
+            </label>
+
+            <label className="space-y-2 font-bold text-[#0d1728]">
+              <span>
+                Nomor WhatsApp{" "}
+                <span className="text-red-500">*</span>
+              </span>
+
+              <input
+                type="tel"
+                value={form.whatsapp}
+                onChange={(event) =>
+                  updateForm("whatsapp", event.target.value)
+                }
+                placeholder="Contoh: 081234567890"
+                className="w-full rounded-xl border border-gray-300 px-4 py-4 font-normal outline-none focus:border-[#ff671d]"
+              />
+            </label>
+
+            <label className="space-y-2 font-bold text-[#0d1728]">
+              <span>
+                Jenis Layanan{" "}
+                <span className="text-red-500">*</span>
+              </span>
+
+              <select
+                value={form.service}
+                onChange={(event) =>
+                  updateForm("service", event.target.value)
+                }
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-4 font-normal outline-none focus:border-[#ff671d]"
+              >
+                <option value="">Pilih layanan</option>
+
+                {services.map((service) => (
+                  <option
+                    key={service.id}
+                    value={service.title}
+                  >
+                    {service.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-2 font-bold text-[#0d1728]">
+              <span>Perkiraan Ukuran</span>
+
+              <input
+                type="text"
+                value={form.estimatedSize}
+                onChange={(event) =>
+                  updateForm(
+                    "estimatedSize",
+                    event.target.value,
+                  )
+                }
+                placeholder="Contoh: 3 × 5 meter"
+                className="w-full rounded-xl border border-gray-300 px-4 py-4 font-normal outline-none focus:border-[#ff671d]"
+              />
+            </label>
+          </div>
+
+          <label className="mt-6 block space-y-2 font-bold text-[#0d1728]">
+            <span>
+              Lokasi Pengerjaan{" "}
+              <span className="text-red-500">*</span>
+            </span>
+
+            <input
+              type="text"
+              value={form.location}
+              onChange={(event) =>
+                updateForm("location", event.target.value)
+              }
+              placeholder="Masukkan kecamatan, kota, atau alamat"
+              className="w-full rounded-xl border border-gray-300 px-4 py-4 font-normal outline-none focus:border-[#ff671d]"
+            />
+          </label>
+
+          <label className="mt-6 block space-y-2 font-bold text-[#0d1728]">
+            <span>Catatan Kebutuhan</span>
+
+            <textarea
+              value={form.notes}
+              onChange={(event) =>
+                updateForm("notes", event.target.value)
+              }
+              rows={5}
+              placeholder="Jelaskan kebutuhan, desain, bahan, atau kondisi yang ingin diperbaiki"
+              className="w-full resize-none rounded-xl border border-gray-300 px-4 py-4 font-normal outline-none focus:border-[#ff671d]"
+            />
+          </label>
+
+          {errorMessage && (
+            <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-semibold text-red-600">
+              {errorMessage}
+            </div>
+          )}
+
+          {message && (
+            <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 font-semibold text-green-600">
+              {message}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-7 inline-flex w-full items-center justify-center gap-3 rounded-xl bg-[#25d366] px-7 py-4 text-lg font-bold text-white transition hover:bg-[#1fbd59] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? (
+              <LoaderCircle
+                className="animate-spin"
+                size={25}
+              />
+            ) : (
+              <MessageCircle size={25} />
+            )}
+
+            {loading
+              ? "Mengirim Permintaan..."
+              : "Kirim Permintaan via WhatsApp"}
+          </button>
+        </form>
+      </div>
+    </section>
+  );
 }
