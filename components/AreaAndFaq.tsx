@@ -6,8 +6,6 @@ import {
 import FaqAccordion from "@/components/FaqAccordion";
 import { createClient } from "@/utils/supabase/server";
 
-const whatsappLocationUrl =
-  "https://wa.me/6282227427004?text=Halo%20TukangLas.org%2C%20saya%20ingin%20menanyakan%20ketersediaan%20jasa%20las%20di%20lokasi%20saya.";
 
 export default async function AreaAndFaq() {
   const supabase = await createClient();
@@ -19,6 +17,26 @@ export default async function AreaAndFaq() {
     .order("sort_order", {
       ascending: true,
     });
+
+  const { data: settings } = await supabase
+    .from("site_settings")
+    .select("whatsapp_number")
+    .eq("id", 1)
+    .maybeSingle();
+
+  const whatsappNumber = settings?.whatsapp_number || "6282227427004";
+
+  const whatsappLocationUrl =
+    `https://wa.me/${whatsappNumber}?text=` +
+    encodeURIComponent(
+      "Halo TukangLas.org, saya ingin menanyakan ketersediaan jasa las di lokasi saya."
+    );
+
+  const whatsappFaqUrl =
+    `https://wa.me/${whatsappNumber}?text=` +
+    encodeURIComponent(
+      "Halo TukangLas.org, saya ingin bertanya mengenai jasa las."
+    );
 
   return (
     <>
@@ -81,7 +99,7 @@ export default async function AreaAndFaq() {
             </p>
 
             <a
-              href={whatsappLocationUrl}
+              href={whatsappFaqUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-7 inline-flex items-center gap-3 font-bold text-[#ff671d] transition hover:text-[#d94f0b]"

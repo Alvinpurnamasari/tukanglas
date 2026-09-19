@@ -12,10 +12,18 @@ export default function LogoutButton() {
 
   async function handleLogout() {
     setLoading(true);
-
-    await supabase.auth.signOut();
-
-    router.push("/admin/login");
+  
+    const { error } = await supabase.auth.signOut();
+  
+    if (error) {
+      setLoading(false);
+      alert("Gagal logout. Silakan coba lagi.");
+      return;
+    }
+  
+    localStorage.removeItem("tukanglas-admin-last-activity");
+  
+    router.replace("/admin/login");
     router.refresh();
   }
 

@@ -1,13 +1,14 @@
 import {
-    Flame,
-    MapPin,
-    MessageCircle,
-    Phone,
-  } from "lucide-react";
+  Flame,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Send,
+} from "lucide-react";
+
+import { createClient } from "@/utils/supabase/server";
   
-  const whatsappUrl =
-    "https://wa.me/6282227427004?text=Halo%20TukangLas.org%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20las.";
-  
+
   const mainServices = [
     "Jasa Las Panggilan",
     "Pembuatan Kanopi",
@@ -19,7 +20,26 @@ import {
     "Konstruksi Baja",
   ];
   
-  export default function Footer() {
+  export default async function Footer() {
+    const supabase = await createClient();
+  
+    const { data: settings } = await supabase
+      .from("site_settings")
+      .select("whatsapp_number, phone_number, telegram_url, service_area")
+      .eq("id", 1)
+      .maybeSingle();
+  
+    const whatsappNumber = settings?.whatsapp_number || "6282227427004";
+    const phoneNumber = settings?.phone_number || "0822-2742-7004";
+    const phoneDigits = phoneNumber.replace(/\D/g, "");
+    const telNumber = phoneDigits.startsWith("0")
+      ? `+62${phoneDigits.slice(1)}`
+      : `+${phoneDigits}`;
+  
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+      "Halo TukangLas.org, saya ingin konsultasi mengenai jasa las."
+    )}`;
+  
     return (
       <>
         {/* CTA */}
@@ -83,28 +103,40 @@ import {
               <h3 className="text-xl font-extrabold text-white">Kontak</h3>
   
               <div className="mt-5 space-y-4">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 transition hover:text-[#ff671d]"
+              >
+                <MessageCircle size={21} />
+                  WhatsApp: +{whatsappNumber}
+              </a>
+
+              <a
+                href={`tel:${telNumber}`}
+                className="flex items-center gap-3 transition hover:text-[#ff671d]"
+              >
+                <Phone size={21} />
+                Telepon: {phoneNumber}
+              </a>
+
+              {settings?.telegram_url && (
                 <a
-                  href={whatsappUrl}
+                  href={settings.telegram_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 transition hover:text-[#ff671d]"
                 >
-                  <MessageCircle size={21} />
-                  WhatsApp: 0822-2742-7004
+                  <Send size={21} />
+                  Telegram
                 </a>
-  
-                <a
-                  href="tel:+6282227427004"
-                  className="flex items-center gap-3 transition hover:text-[#ff671d]"
-                >
-                  <Phone size={21} />
-                  Telepon: 0822-2742-7004
-                </a>
-  
-                <p className="flex items-start gap-3">
-                  <MapPin className="mt-1 shrink-0" size={21} />
-                  Area layanan menyesuaikan ketersediaan tukang
-                </p>
+              )}
+
+              <p className="flex items-start gap-3">
+                <MapPin className="mt-1 shrink-0" size={21} />
+                {settings?.service_area || "Area layanan menyesuaikan ketersediaan tukang"}
+              </p>
   
                 <p>Jam operasional: Hubungi melalui WhatsApp</p>
               </div>

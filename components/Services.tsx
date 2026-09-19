@@ -39,10 +39,10 @@ const iconMap: Record<string, LucideIcon> = {
   Hammer,
 };
 
-function createWhatsAppUrl(service: string) {
+function createWhatsAppUrl(service: string, whatsappNumber: string)  {
   const message = `Halo TukangLas.org, saya ingin konsultasi mengenai layanan ${service}.`;
 
-  return `https://wa.me/6282227427004?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
 export default async function Services() {
@@ -55,6 +55,14 @@ export default async function Services() {
     .order("sort_order", { ascending: true });
 
   const services: Service[] = data ?? [];
+
+  const { data: settings } = await supabase
+    .from("site_settings")
+    .select("whatsapp_number")
+    .eq("id", 1)
+    .maybeSingle();
+
+  const whatsappNumber = settings?.whatsapp_number || "6282227427004";
 
   return (
     <section id="layanan" className="bg-[#f4f6f8] py-20 lg:py-28">
@@ -110,7 +118,7 @@ export default async function Services() {
                     </p>
 
                     <a
-                      href={createWhatsAppUrl(service.title)}
+                      href={createWhatsAppUrl(service.title, whatsappNumber)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-6 inline-flex items-center gap-2 font-bold text-[#ff671d] transition hover:gap-3"

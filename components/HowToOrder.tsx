@@ -1,3 +1,4 @@
+import { createClient } from "@/utils/supabase/server";
 import {
     Camera,
     ClipboardCheck,
@@ -44,18 +45,30 @@ import {
       },
   ];
 
-  const whatsappUrl = "https://wa.me/6282227427004?text=Halo%20TukangLas.org%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20las.";
+ 
+  export default async function HowToOrder() {
+    const supabase = await createClient();
+  
+    const { data: settings } = await supabase
+      .from("site_settings")
+      .select("whatsapp_number")
+      .eq("id", 1)
+      .maybeSingle();
+  
+    const whatsappNumber = settings?.whatsapp_number || "6282227427004";
+    const message = "Halo TukangLas.org, saya ingin konsultasi mengenai jasa las.";
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  
 
-  export default function HowToOrder() {
     return (
         <section id="cara-pesan" className="bg-white py-20 lg:py-28">
             <div className="mx-auto max-w-[1560px] px-5 lg:px-10">
                 <div className="mx-auto mb-16 max-w-3xl text-center">
-                    <span className="inline-flex rounded-full bg-[#ff671d]/10 px-5 py-2 font-bold text-[#ff671d">
+                    <span className="inline-flex rounded-full bg-[#ff671d]/10 px-5 py-2 font-bold text-[#ff671d]">
                         Cara Pemesanan
                     </span>
 
-                    <h2 className="mt-5 text-4xl font-extrabold tracking-tight text-[0d1728] sm:text-5xl">
+                    <h2 className="mt-5 text-4xl font-extrabold tracking-tight text-[#0d1728] sm:text-5xl">
                         Mudah Memesan Jasa Las
                     </h2>
 
@@ -71,7 +84,7 @@ import {
                             const Icon = step.icon;
 
                             return (
-                                <article key={step.number} className="group relative rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm transition duration-300 hover:-translate-y-2 hover:border-[fff671d]/40 hover:shadow-xl">
+                                <article key={step.number} className="group relative rounded-2xl border border-gray-200 bg-white p-6 text-center shadow-sm transition duration-300 hover:-translate-y-2 hover:border-[#fff671d]/40 hover:shadow-xl">
                                     <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-full border-8 border-white bg-[#ff671d] text-white shadow-lg shadow-orange-200">
                                         <Icon size={29}/>
                                     </div>

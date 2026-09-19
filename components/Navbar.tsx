@@ -13,11 +13,18 @@ const menus = [
   { name: "Kontak", href: "#kontak" },
 ];
 
-const whatsappUrl =
-  "https://wa.me/6282227427004?text=Halo%20TukangLas.org%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20las.";
 
-export default function Navbar() {
+export default function Navbar({
+  whatsappNumber,
+}: {
+  whatsappNumber: string;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+    "Halo TukangLas.org, saya ingin konsultasi mengenai jasa las."
+  )}`;
+
 
   return (
     <header className="fixed left-0 top-0 z-50 w-full border-b border-white/10 bg-[#0d1728]/95 backdrop-blur-md">

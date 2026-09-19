@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import LogoutButton from "@/components/admin/LogoutButton";
+import AdminIdleLogout from "@/components/admin/AdminIdleLogout";
 
 export default async function ProtectedAdminLayout({
   children,
@@ -14,12 +15,15 @@ export default async function ProtectedAdminLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+
+  if (!user || !adminEmail || user.email?.toLowerCase() !== adminEmail) {
     redirect("/admin/login");
   }
 
   return (
     <div className="min-h-screen bg-[#f4f6f8]">
+      <AdminIdleLogout />
       <AdminSidebar />
 
       <div className="min-h-screen lg:pl-72">

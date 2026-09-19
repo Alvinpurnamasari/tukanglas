@@ -9,9 +9,7 @@ import {
   
   import { createClient } from "@/utils/supabase/server";
   
-  const whatsappUrl =
-    "https://wa.me/6282227427004?text=Halo%20TukangLas.org%2C%20saya%20ingin%20konsultasi%20mengenai%20jasa%20las.";
-  
+
   const fallbackHero = {
     badge: "Jasa Las Panggilan Profesional",
     title_line_one: "Jasa Las Panggilan",
@@ -56,6 +54,18 @@ import {
       ...fallbackHero,
       ...(data ?? {}),
     };
+
+    const { data: settings } = await supabase
+      .from("site_settings")
+      .select("whatsapp_number")
+      .eq("id", 1)
+      .maybeSingle();
+
+    const whatsappNumber = settings?.whatsapp_number || "6282227427004";
+
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+      "Halo TukangLas.org, saya ingin konsultasi mengenai jasa las."
+)}`;
   
     return (
       <section

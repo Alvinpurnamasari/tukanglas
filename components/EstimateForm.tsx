@@ -47,6 +47,8 @@ export default function EstimateForm() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [displayWhatsappNumber, setDisplayWhatsappNumber] =
+  useState("6282227427004");
 
   useEffect(() => {
     async function loadServices() {
@@ -60,7 +62,19 @@ export default function EstimateForm() {
 
       setServices(data ?? []);
     }
-
+    async function loadWhatsappNumber() {
+      const { data } = await supabase
+        .from("site_settings")
+        .select("whatsapp_number")
+        .eq("id", 1)
+        .maybeSingle();
+    
+      if (data?.whatsapp_number) {
+        setDisplayWhatsappNumber(data.whatsapp_number);
+      }
+    }
+    
+    loadWhatsappNumber();
     loadServices();
   }, []);
 
@@ -109,6 +123,21 @@ export default function EstimateForm() {
      */
     const whatsappWindow = window.open("", "_blank");
 
+    const { data: settings, error: settingsError } = await supabase
+      .from("site_settings")
+      .select("whatsapp_number")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (settingsError) {
+      whatsappWindow?.close();
+      setErrorMessage("Nomor tujuan WhatsApp belum dapat dimuat. Coba lagi.");
+      setLoading(false);
+      return;
+    }
+
+    const whatsappNumber = settings?.whatsapp_number || "6282227427004";
+
     const { error } = await supabase
       .from("requests")
       .insert({
@@ -144,7 +173,7 @@ export default function EstimateForm() {
     ].join("\n");
 
     const whatsappUrl =
-      "https://wa.me/6282227427004?text=" +
+      `https://wa.me/${whatsappNumber}?text=` +
       encodeURIComponent(whatsappMessage);
 
     if (whatsappWindow) {
@@ -222,7 +251,7 @@ export default function EstimateForm() {
 
               <div>
                 <h3 className="font-bold">
-                  WhatsApp 0822-2742-7004
+                  WhatsApp +{displayWhatsappNumber}
                 </h3>
 
                 <p className="mt-1 text-gray-400">

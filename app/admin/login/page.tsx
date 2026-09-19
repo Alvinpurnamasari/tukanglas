@@ -44,6 +44,11 @@ export default function AdminLoginPage() {
       return;
     }
 
+    localStorage.setItem(
+      "tukanglas-admin-last-activity",
+      String(Date.now()),
+    );
+
     router.push("/admin");
     router.refresh();
   }
