@@ -1,6 +1,5 @@
 "use client";
-
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { ImageIcon, LoaderCircle, Save } from "lucide-react";
@@ -42,6 +41,21 @@ export default function BannerManager({
     initialData.background_url
   );
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(selectedFile);
+    setPreviewUrl(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [selectedFile]);
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -55,7 +69,7 @@ export default function BannerManager({
       !titleConnector.trim() ||
       !titleLineThree.trim() ||
       !description.trim() ||
-      !backgroundUrl.trim()
+      (!selectedFile && !backgroundUrl.trim())
     ) {
       setMessage("Semua data banner wajib diisi.");
       return;
@@ -63,6 +77,39 @@ export default function BannerManager({
 
     setLoading(true);
     setMessage("");
+
+    let nextBackgroundUrl = backgroundUrl;
+
+    if (selectedFile) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(selectedFile.type)) {
+        setMessage("Pilih gambar JPG, PNG, atau WebP.");
+        setLoading(false);
+        return;
+      }
+
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        setMessage("Ukuran gambar maksimal 5 MB.");
+        setLoading(false);
+        return;
+      }
+
+      const extension = selectedFile.type.split("/")[1].replace("jpeg", "jpg");
+      const path = `banner-${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("banner-images")
+        .upload(path, selectedFile, { contentType: selectedFile.type });
+
+      if (uploadError) {
+        setMessage(`Gagal mengunggah gambar: ${uploadError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      nextBackgroundUrl = supabase.storage
+        .from("banner-images")
+        .getPublicUrl(path).data.publicUrl;
+    }
 
     const { error } = await supabase
       .from("hero_section")
@@ -73,7 +120,7 @@ export default function BannerManager({
         title_connector: titleConnector.trim(),
         title_line_three: titleLineThree.trim(),
         description: description.trim(),
-        background_url: backgroundUrl.trim(),
+        background_url: nextBackgroundUrl.trim(),
       })
       .eq("id", initialData.id);
 
@@ -85,6 +132,8 @@ export default function BannerManager({
 
     setMessage("Banner berhasil diperbarui.");
     setLoading(false);
+    setBackgroundUrl(nextBackgroundUrl);
+    setSelectedFile(null);
     router.refresh();
   }
 
@@ -191,18 +240,18 @@ export default function BannerManager({
 
           <label className="block">
             <span className="mb-2 block font-bold text-[#0d1728]">
-              URL Gambar Latar
+              Gambar Latar
             </span>
             <input
-              type="url"
-              value={backgroundUrl}
-              onChange={(event) => setBackgroundUrl(event.target.value)}
-              placeholder="https://..."
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none focus:border-[#ff671d]"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(event) =>
+                setSelectedFile(event.target.files?.[0] ?? null)
+              }
+              className="w-full rounded-xl border border-gray-300 px-4 py-3"
             />
             <span className="mt-2 block text-sm text-gray-500">
-              Untuk sementara gunakan URL gambar. Upload file dibuat pada tahap
-              Supabase Storage.
+              JPG, PNG, atau WebP. Maksimal 5 MB. Kosongkan jika tidak ingin mengganti gambar.
             </span>
           </label>
         </div>
@@ -242,7 +291,7 @@ export default function BannerManager({
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: `url("${backgroundUrl}")`,
+              backgroundImage: `url("${previewUrl ?? backgroundUrl}")`,
             }}
           />
 
