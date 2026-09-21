@@ -1,6 +1,5 @@
 "use client";
-
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
     Camera,
     Globe,
@@ -11,6 +10,11 @@ import {
     Phone,
     Save,
     Send,
+    Eye,
+  EyeOff,
+  KeyRound,
+  Lock,
+  UserRound,
 } from "lucide-react";
 
 import { createClient } from "@/utils/supabase/client";
@@ -39,6 +43,27 @@ export default function SettingsManager({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+const [newPassword, setNewPassword] = useState("");
+const [confirmPassword, setConfirmPassword] = useState("");
+const [accountLoading, setAccountLoading] = useState(false);
+const [accountMessage, setAccountMessage] = useState("");
+const [accountError, setAccountError] = useState("");
+const [showPassword, setShowPassword] = useState(false);
+
+useEffect(() => {
+  async function loadAdminAccount() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.email) {
+      setLoginEmail(user.email);
+    }
+  }
+
+  loadAdminAccount();
+}, []);
 
   function updateField(
     field: keyof Settings,
@@ -103,8 +128,90 @@ export default function SettingsManager({
     setLoading(false);
   }
 
+  async function handleAccountSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+  
+    setAccountMessage("");
+    setAccountError("");
+  
+    const email = loginEmail.trim();
+  
+    if (!email) {
+      setAccountError("Email login harus diisi.");
+      return;
+    }
+  
+    if (newPassword && newPassword.length < 6) {
+      setAccountError("Password minimal 6 karakter.");
+      return;
+    }
+  
+    if (newPassword !== confirmPassword) {
+      setAccountError("Konfirmasi password tidak sama.");
+      return;
+    }
+  
+    setAccountLoading(true);
+  
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+  
+    if (userError || !user) {
+      setAccountError(
+        userError?.message || "Sesi login tidak ditemukan.",
+      );
+      setAccountLoading(false);
+      return;
+    }
+  
+    const updates: {
+      email?: string;
+      password?: string;
+    } = {};
+  
+    if (email !== user.email) {
+      updates.email = email;
+    }
+  
+    if (newPassword) {
+      updates.password = newPassword;
+    }
+  
+    if (Object.keys(updates).length === 0) {
+      setAccountError("Tidak ada perubahan akun.");
+      setAccountLoading(false);
+      return;
+    }
+  
+    const { error } = await supabase.auth.updateUser(updates);
+  
+    if (error) {
+      setAccountError(error.message);
+      setAccountLoading(false);
+      return;
+    }
+  
+    setNewPassword("");
+    setConfirmPassword("");
+  
+    if (updates.email) {
+      setAccountMessage(
+        "Permintaan perubahan email berhasil. Silakan periksa email konfirmasi. Password juga berhasil diperbarui jika diisi.",
+      );
+    } else {
+      setAccountMessage("Password login berhasil diperbarui.");
+    }
+  
+    setAccountLoading(false);
+  }
+
   return (
-    <form
+    <div className="space-y-8">
+      <form
       onSubmit={handleSubmit}
       className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm lg:p-8"
     >
@@ -289,5 +396,138 @@ export default function SettingsManager({
           : "Simpan Pengaturan"}
       </button>
     </form>
-  );
+    <form
+  onSubmit={handleAccountSubmit}
+  className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm lg:p-8"
+>
+  <div className="mb-6">
+    <div className="flex items-center gap-3">
+      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#ff671d] text-white">
+        <KeyRound size={24} />
+      </span>
+
+      <div>
+        <h2 className="text-2xl font-extrabold text-[#0d1728]">
+          Akun Admin
+        </h2>
+
+        <p className="text-gray-500">
+          Ubah email dan password yang digunakan untuk login.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div className="grid gap-6 lg:grid-cols-2">
+    <label className="space-y-2 font-bold text-[#0d1728] lg:col-span-2">
+      <span className="flex items-center gap-2">
+        <UserRound size={20} className="text-[#ff671d]" />
+        Email Login Admin *
+      </span>
+
+      <input
+        type="email"
+        value={loginEmail}
+        onChange={(event) => setLoginEmail(event.target.value)}
+        placeholder="admin@tukanglas.org"
+        autoComplete="email"
+        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-normal outline-none focus:border-[#ff671d]"
+      />
+
+      <p className="text-sm font-normal text-gray-500">
+        Email ini digunakan untuk masuk ke halaman admin.
+      </p>
+    </label>
+
+    <label className="space-y-2 font-bold text-[#0d1728]">
+      <span className="flex items-center gap-2">
+        <Lock size={20} className="text-[#ff671d]" />
+        Password Baru
+      </span>
+
+      <div className="relative">
+        <input
+          type={showPassword ? "text" : "password"}
+          value={newPassword}
+          onChange={(event) =>
+            setNewPassword(event.target.value)
+          }
+          placeholder="Minimal 6 karakter"
+          autoComplete="new-password"
+          className="w-full rounded-xl border border-gray-300 px-4 py-3 pr-12 font-normal outline-none focus:border-[#ff671d]"
+        />
+
+        <button
+          type="button"
+          onClick={() => setShowPassword((current) => !current)}
+          aria-label={
+            showPassword
+              ? "Sembunyikan password"
+              : "Tampilkan password"
+          }
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+        >
+          {showPassword ? (
+            <EyeOff size={21} />
+          ) : (
+            <Eye size={21} />
+          )}
+        </button>
+      </div>
+    </label>
+
+    <label className="space-y-2 font-bold text-[#0d1728]">
+      <span className="flex items-center gap-2">
+        <Lock size={20} className="text-[#ff671d]" />
+        Konfirmasi Password Baru
+      </span>
+
+      <input
+        type={showPassword ? "text" : "password"}
+        value={confirmPassword}
+        onChange={(event) =>
+          setConfirmPassword(event.target.value)
+        }
+        placeholder="Ulangi password baru"
+        autoComplete="new-password"
+        className="w-full rounded-xl border border-gray-300 px-4 py-3 font-normal outline-none focus:border-[#ff671d]"
+      />
+    </label>
+  </div>
+
+  <p className="mt-4 text-sm text-gray-500">
+    Kosongkan password jika hanya ingin mengubah email login.
+  </p>
+
+  {accountError && (
+    <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-semibold text-red-600">
+      {accountError}
+    </div>
+  )}
+
+  {accountMessage && (
+    <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 font-semibold text-green-600">
+      {accountMessage}
+    </div>
+  )}
+
+  <button
+    type="submit"
+    disabled={accountLoading}
+    className="mt-7 inline-flex items-center justify-center gap-3 rounded-xl bg-[#0d1728] px-7 py-4 font-bold text-white transition hover:bg-[#172641] disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    {accountLoading ? (
+      <LoaderCircle size={22} className="animate-spin" />
+    ) : (
+      <KeyRound size={22} />
+    )}
+
+    {accountLoading
+      ? "Menyimpan..."
+      : "Simpan Akun Admin"}
+  </button>
+</form>
+  </div>
+);
+   
 }
