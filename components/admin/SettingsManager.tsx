@@ -136,7 +136,7 @@ useEffect(() => {
     setAccountMessage("");
     setAccountError("");
   
-    const email = loginEmail.trim();
+    const email = loginEmail.trim().toLowerCase();
   
     if (!email) {
       setAccountError("Email login harus diisi.");
@@ -155,58 +155,68 @@ useEffect(() => {
   
     setAccountLoading(true);
   
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
   
-    if (userError || !user) {
-      setAccountError(
-        userError?.message || "Sesi login tidak ditemukan.",
-      );
-      setAccountLoading(false);
-      return;
-    }
+      if (userError || !user) {
+        setAccountError("Sesi login tidak ditemukan.");
+        setAccountLoading(false);
+        return;
+      }
   
-    const updates: {
-      email?: string;
-      password?: string;
-    } = {};
+      const emailChanged =
+        email !== user.email?.toLowerCase();
   
-    if (email !== user.email) {
-      updates.email = email;
-    }
+      if (!emailChanged && !newPassword) {
+        setAccountError("Tidak ada perubahan akun.");
+        setAccountLoading(false);
+        return;
+      }
   
-    if (newPassword) {
-      updates.password = newPassword;
-    }
+      const response = await fetch("/api/admin/account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password: newPassword,
+        }),
+      });
   
-    if (Object.keys(updates).length === 0) {
-      setAccountError("Tidak ada perubahan akun.");
-      setAccountLoading(false);
-      return;
-    }
+      const result = await response.json();
   
-    const { error } = await supabase.auth.updateUser(updates);
+      if (!response.ok) {
+        setAccountError(
+          result.error || "Gagal memperbarui akun admin.",
+        );
+        setAccountLoading(false);
+        return;
+      }
   
-    if (error) {
-      setAccountError(error.message);
-      setAccountLoading(false);
-      return;
-    }
-  
-    setNewPassword("");
-    setConfirmPassword("");
-  
-    if (updates.email) {
       setAccountMessage(
-        "Permintaan perubahan email berhasil. Silakan periksa email konfirmasi. Password juga berhasil diperbarui jika diisi.",
+        "Akun berhasil diperbarui. Anda akan diarahkan ke halaman login.",
       );
-    } else {
-      setAccountMessage("Password login berhasil diperbarui.");
-    }
   
-    setAccountLoading(false);
+      setNewPassword("");
+      setConfirmPassword("");
+  
+      await supabase.auth.signOut();
+  
+      localStorage.removeItem(
+        "tukanglas-admin-last-activity",
+      );
+  
+      window.location.href = "/admin/login";
+    } catch {
+      setAccountError(
+        "Terjadi kesalahan saat memperbarui akun.",
+      );
+      setAccountLoading(false);
+    }
   }
 
   return (
